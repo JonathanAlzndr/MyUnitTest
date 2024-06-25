@@ -1,37 +1,39 @@
 version: 2.1
- 
-orbs:
-  android: circleci/android@0.2.1
- 
+
 jobs:
   build:
-    executor: android/android
+    docker:
+      - image: cimg/android:2023.08.1 # Or a more recent image with Java 17
+
     steps:
       - checkout
       - restore_cache:
-          key: android-orb-v1-
-      - run:
-          name: Chmod permissions
-          command: sudo chmod +x ./gradlew
+          key: gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - restore_cache:
+          key: android-build-cache-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
       - run:
           name: Download Dependencies
           command: ./gradlew androidDependencies
       - save_cache:
-          key: 'android-orb-v1-{{ epoch }}'
+          key: gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+          paths:
+            - ~/.gradle/wrapper
+      - save_cache:
+          key: android-build-cache-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
           paths:
             - ~/.android/build-cache
             - ~/.android/cache
       - run:
           name: Run Build
-          command: ./gradlew build
-      - store_artifacts: 
+          command: ./gradlew assembleDebug
+      - store_artifacts:
           path: app/build/reports
           destination: reports
       - run:
           name: Run Tests
-          command: ./gradlew lint test
+          command: ./gradlew lint testDebugUnitTest
       - store_test_results:
           path: app/build/test-results
-      - store_artifacts:  
+      - store_artifacts:
           path: app/build/outputs/apk/debug/
           destination: artifact-file

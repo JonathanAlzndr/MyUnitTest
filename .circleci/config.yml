@@ -7,6 +7,13 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          name: Set JAVA_HOME
+          command: |
+            echo "Java version check:"
+            java -version
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk' >> $BASH_ENV
+            echo "JAVA_HOME is now set to: $JAVA_HOME"
       - restore_cache:
           key: gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
       - restore_cache:
